@@ -10,6 +10,13 @@ import {
   Wallet,
 } from 'lucide-react';
 
+const DEFAULT_API_BASE_URL =
+  globalThis.location?.hostname === 'localhost'
+    ? 'http://localhost:8787'
+    : 'https://bank-8n3i.onrender.com';
+
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/$/, '');
+
 const SAMPLE_TRANSACTIONS = [
   { id: 1, type: 'income', amount: 3000000, category: '월급', date: '2026-04-05' },
   { id: 2, type: 'income', amount: 200000, category: '부업', date: '2026-04-01' },
@@ -243,7 +250,7 @@ export default function App() {
     setError('');
 
     try {
-      const response = await fetch('/api/investment-advice', {
+      const response = await fetch(`${API_BASE_URL}/api/investment-advice`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
