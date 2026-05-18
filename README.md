@@ -1,135 +1,99 @@
-# Bank
+# Bank — AI 가계부 & 투자 조언 앱
 
-가계부 데이터를 입력하고, 사용자의 투자 조건을 바탕으로 Gemini API에 ETF 중심 투자 조언을 요청하는 프로젝트입니다.
+가계부를 기록하고, 내 재정 상태를 바탕으로 AI에게 ETF 중심 투자 조언을 받을 수 있는 웹 애플리케이션입니다.
 
-## 프로젝트 구성
+---
 
-- `frontend`
-  - React + Vite 기반 프론트엔드
-  - 가계부 입력, 월별 수입/지출 요약, 카테고리 비중, AI 투자 조언 UI 제공
-- `backend`
-  - Node.js 기본 `http` 서버
-  - `backend/.env`에 저장된 Gemini API 키를 읽어 투자 조언 API 제공
+## 주요 기능 스크린샷
+
+> 📷 스크린샷을 추가하려면 `docs/screenshots/` 폴더에 이미지를 넣고 아래 주석을 해제해 주세요.
+
+<!-- ![메인 화면](./docs/screenshots/main.png) -->
+<!-- ![AI 투자 조언 화면](./docs/screenshots/advice.png) -->
+
+---
+
+## 기획 배경
+
+매달 수입과 지출을 기록하는 것만으로는 부족하다고 느꼈습니다.  
+"지금 내 재정 상태에서 어떻게 돈을 굴려야 할까?"라는 질문에 답을 주는 도구가 없었기 때문입니다.
+
+단순한 가계부 앱은 많지만, **나의 실제 수입·지출 데이터를 바탕으로 맞춤 투자 방향을 제안해 주는 앱**은 찾기 어려웠습니다. 그래서 가계부 기능과 AI 투자 조언을 하나의 앱 안에서 연결하는 방향으로 기획했습니다.
+
+---
 
 ## 주요 기능
 
-- 수입/지출 거래 내역 추가, 수정, 삭제
-- 월별 수입/지출 시각화
-- 카테고리별 수입/지출 비중 표시
-- 사용자 투자 조건 입력
-- Gemini API를 통한 ETF 추천, 투자 비율, 단기 유망 산업 조언 생성
+- **거래 내역 관리** — 수입·지출 추가, 수정, 삭제
+- **월별 차트** — 월 단위 수입·지출 추이를 시각적으로 비교
+- **카테고리 비중** — 어느 항목에 얼마나 쓰는지 비율로 확인
+- **AI 투자 조언** — 투자 가능 금액, 부채, 투자 성향 등을 입력하면 Gemini AI가 ETF 추천과 분산 투자 전략을 제시
 
-## 폴더 구조
+---
 
-```text
-bank/
-├─ backend/
-│  ├─ .env
-│  ├─ .env.example
-│  ├─ .gitignore
-│  ├─ package.json
-│  └─ server.js
-├─ frontend/
-│  ├─ index.html
-│  ├─ package.json
-│  ├─ vite.config.js
-│  └─ src/
-│     ├─ App.jsx
-│     ├─ index.css
-│     └─ main.jsx
-└─ README.md
+## 기술 스택
+
+| 영역 | 사용 기술 | 선택 이유 |
+|------|----------|----------|
+| 프론트엔드 | React 19 + Vite | 빠른 개발 환경과 최신 React 기능 활용 |
+| 아이콘 | lucide-react | 가볍고 일관된 디자인 시스템 |
+| 백엔드 | Node.js (http 모듈) | 외부 프레임워크 없이 요청 흐름을 직접 이해하고 싶었습니다 |
+| AI | Google Gemini API (`gemini-2.5-flash`) | 한국어 응답 품질이 우수하고 무료 티어로 충분했습니다 |
+| 프론트 배포 | Netlify | GitHub 연동 자동 배포가 간편했습니다 |
+| 백엔드 배포 | Render | 무료 플랜으로 Node 서버를 빠르게 올릴 수 있었습니다 |
+
+---
+
+## 트러블슈팅
+
+### API 경로 문제 — 배포 후 투자 조언 기능이 동작하지 않았습니다
+
+**문제**  
+로컬에서는 Vite의 프록시 설정 덕분에 `/api/investment-advice`로 요청하면 백엔드로 잘 전달됐습니다. 그런데 Netlify에 배포하자 Vite 프록시가 동작하지 않아, 요청이 Netlify 서버로 그대로 날아가면서 404 에러가 발생했습니다.
+
+```
+로컬 환경:  프록시가 /api/* → localhost:8787 로 중계
+배포 환경:  프록시 없음 → /api/* 요청이 Netlify 서버로 전달 → 404
 ```
 
-## 실행 방법
+**시도**  
+처음에는 Netlify의 `_redirects`로 프록시를 흉내 내는 방식을 고려했습니다. 하지만 백엔드가 별도 Render 서버에 있기 때문에, URL 자체를 환경에 따라 올바르게 가리키는 것이 더 근본적인 해결책이라고 판단했습니다.
 
-### 1. 백엔드 환경 변수 설정
+**해결**  
+API URL을 환경에 따라 자동으로 분기하는 로직을 추가했습니다.  
+환경 변수(`VITE_API_BASE_URL`)가 있으면 우선 사용하고, 없으면 `hostname`을 보고 로컬인지 배포인지 판단합니다.
 
-`backend/.env` 파일에 Gemini API 키를 입력합니다.
+```js
+const DEFAULT_API_BASE_URL =
+  globalThis.location?.hostname === 'localhost'
+    ? 'http://localhost:8787'
+    : 'https://bank-8n3i.onrender.com';
 
-```env
-GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_MODEL=gemini-2.5-flash
-PORT=8787
+const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL
+).replace(/\/$/, '');
 ```
 
-### 2. 백엔드 실행
-
-```bash
-cd backend
-npm run dev
+```js
+// 상대 경로 → 절대 경로로 변경
+const response = await fetch(`${API_BASE_URL}/api/investment-advice`, {
+  method: 'POST',
+  ...
+});
 ```
 
-기본 주소:
+**결과**  
+로컬과 배포 환경 모두 코드 수정 없이 정상 동작하게 됐습니다. 또한 나중에 백엔드 URL이 바뀌더라도 환경 변수 값만 교체하면 되는 구조가 됐습니다.
 
-```text
-http://localhost:8787
-```
+---
 
-API 경로:
+## 회고 / 배운 점
 
-```text
-GET  /api/health
-POST /api/investment-advice
-```
+**로컬과 배포 환경은 다르다는 것을 직접 경험했습니다.**  
+Vite 프록시는 개발 서버에서만 동작한다는 사실을 배포 후에야 알았습니다. 처음부터 프론트와 백엔드를 다른 서버에 배포할 것을 고려했다면 URL 설계를 더 일찍 잡을 수 있었을 것입니다.
 
-### 3. 프론트엔드 실행
+**백엔드를 Express 없이 순수 Node.js로 작성한 경험이 도움이 됐습니다.**  
+요청 파싱, 라우팅, 응답 헤더 설정을 직접 구현하면서 Express가 내부적으로 어떤 역할을 하는지 더 잘 이해하게 됐습니다.
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-기본 주소:
-
-```text
-http://localhost:5173
-```
-
-프론트의 `/api` 요청은 `vite.config.js`에서 백엔드 `http://localhost:8787`로 프록시되도록 설정되어 있습니다.
-
-## 화면 설명
-
-- 가계부 요약 카드
-  - 총 잔액, 총 수입, 총 지출 표시
-- 월별 수입/지출 차트
-  - 월 단위 수입/지출 비교
-- 카테고리 비중 차트
-  - 수입/지출 분포 확인
-- 거래 입력 폼
-  - 날짜, 카테고리, 금액 기준으로 거래 추가
-- AI 투자 조언 영역
-  - 투자 가능 금액, 현금, 부채, 투자 성향 등을 입력하고 Gemini 조언 요청
-
-## 스크린샷
-
-실제 서비스 화면 캡처를 추가하려면 `README.md` 기준 상대 경로로 이미지를 넣으면 됩니다.
-
-```md
-![메인 화면](./docs/screenshots/main.png)
-![AI 투자 조언 화면](./docs/screenshots/advice.png)
-```
-
-예시 섹션:
-
-```md
-### 메인 화면
-![메인 화면](./docs/screenshots/main.png)
-
-### AI 투자 조언 화면
-![AI 투자 조언 화면](./docs/screenshots/advice.png)
-```
-
-현재 프로젝트에는 README에 바로 연결할 실제 앱 스크린샷 파일이 없어서, 위 형식으로 추가하면 됩니다.
-
-## 백엔드 동작 방식
-
-- `server.js`가 `backend/.env`를 읽어 Gemini API 키를 로드합니다.
-- 프론트에서 전달한 투자 조건과 거래 요약 데이터를 바탕으로 프롬프트를 생성합니다.
-- Gemini API 호출 결과를 프론트에 JSON 형태로 반환합니다.
-
-## 참고 사항
-
-- 투자 조언은 참고용이며 실제 투자 판단과 책임은 사용자 본인에게 있습니다.
-- `backend/.env`는 민감 정보가 포함되므로 Git에 포함하지 않도록 `backend/.gitignore`에 등록되어 있습니다.
-- `frontend/dist`는 프론트 빌드 결과물입니다.
+**AI API 프롬프트 설계가 결과 품질을 좌우한다는 것을 배웠습니다.**  
+단순히 "투자 조언해줘"가 아니라, 역할·형식·제약 조건을 구체적으로 지정하니 훨씬 일관되고 실용적인 응답이 나왔습니다. 프롬프트도 코드처럼 설계가 필요하다는 점이 인상적이었습니다.
